@@ -107,29 +107,20 @@ def scrape_one(page, goods_id, item_name=None):
 
         # 4. 切换平台到悠悠有品
         print(f"  [4] 切换平台到悠悠有品...", flush=True)
-        select_info = page.evaluate("""() => {
+        switch_ok = page.evaluate("""() => {
             const selects = document.querySelectorAll('select');
             for (const sel of selects) {
-                const options = Array.from(sel.options).map(o => ({text: o.text, value: o.value}));
-                if (options.some(o => o.text === '悠悠有品')) {
-                    return {value: options.find(o => o.text === '悠悠有品').value};
+                if (Array.from(sel.options).some(o => o.text === '悠悠有品')) {
+                    const target = Array.from(sel.options).find(o => o.text === '悠悠有品');
+                    sel.value = target.value;
+                    sel.dispatchEvent(new Event('change', {bubbles: true}));
+                    sel.dispatchEvent(new Event('input', {bubbles: true}));
+                    return true;
                 }
             }
-            return null;
+            return false;
         }""")
-        if select_info:
-            page.evaluate("""(targetValue) => {
-                const selects = document.querySelectorAll('select');
-                for (const sel of selects) {
-                    if (Array.from(sel.options).some(o => o.text === '悠悠有品')) {
-                        sel.value = targetValue;
-                        sel.dispatchEvent(new Event('change', {bubbles: true}));
-                        sel.dispatchEvent(new Event('input', {bubbles: true}));
-                        return true;
-                    }
-                }
-                return false;
-            }""", select_info["value"])
+        if switch_ok:
             page.wait_for_timeout(2000)
             print(f"      ✓ 切换完成", flush=True)
 
